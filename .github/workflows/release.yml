@@ -219,7 +219,7 @@ jobs:
           APPLE_DEVELOPMENT_TEAM: ${{ secrets.APPLE_TEAM_ID }}
         run: npm run tauri -- ios build --export-method app-store-connect
       - name: Upload to TestFlight
-        uses: apple-actions/upload-testflight-build@v3
+        uses: apple-actions/upload-testflight-build@v5
         with:
           app-path: src-tauri/gen/apple/build/arm64/Hakushi.ipa
           issuer-id: ${{ secrets.APPLE_API_ISSUER_ID }}
