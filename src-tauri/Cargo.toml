@@ -1,6 +1,6 @@
 [package]
 name = "hakushi"
-version = "1.0.0"
+version = "1.0.1"
 description = "Hakushi — local-first, git-native Notion alternative"
 edition = "2021"
 license = "MIT"
