@@ -1,0 +1,299 @@
+name: Release
+
+# Continuous delivery for all five distribution channels.
+#
+# Trigger: every push to main. `semantic-release` (Conventional Commits) decides
+# whether the merged commits warrant a release:
+#   - feat: / fix: / perf: / BREAKING CHANGE  -> a new version is cut
+#   - chore: / docs: / test: / ci: / refactor: -> NO release (jobs are skipped)
+# When a release is cut, the `version` job bumps the version in every platform
+# config (scripts/sync-version.mjs), commits it back to main, tags `vX.Y.Z`, and
+# publishes a GitHub Release. The downstream jobs then build the tagged commit
+# and ship each channel:
+#   web      -> GitHub Pages
+#   desktop  -> signed installers attached to the GitHub Release (macOS/Windows/Linux)
+#   ios      -> TestFlight (App Store Connect)
+#   android  -> Google Play internal-testing track
+# Promotion of the mobile builds to the App Store / Play production tracks is a
+# deliberate MANUAL step in App Store Connect / Play Console.
+#
+# Required secrets are documented in docs/dev/RELEASE.md. Any signing secret that
+# is absent degrades gracefully: desktop builds unsigned, and the mobile jobs
+# fail fast at their signing step (never shipping an unsigned store build).
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Never cancel an in-flight release; a half-published release is worse than a queue.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # 1. Decide + stamp the version. Single source of truth for all channels.
+  # ---------------------------------------------------------------------------
+  version:
+    name: version (semantic-release)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # push bump commit + tag, create the Release
+      issues: write # semantic-release may comment on resolved issues
+      pull-requests: write # ...and on the merged PR
+    outputs:
+      published: ${{ steps.semrel.outputs.published }}
+      version: ${{ steps.semrel.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # semantic-release needs full history + tags
+          # A PAT (RELEASE_TOKEN) lets the bump commit push past branch
+          # protection on main; falls back to the default token otherwise.
+          token: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: semantic-release
+        id: semrel
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+        run: npx semantic-release
+
+  # ---------------------------------------------------------------------------
+  # 2. Web -> GitHub Pages (static SPA; persistent isomorphic-git + lightning-fs
+  #    backend with GitHub-API remote sync — see docs/dev/WEB-GIT.md).
+  #    Repo Settings -> Pages -> Source must be "GitHub Actions".
+  # ---------------------------------------------------------------------------
+  web:
+    name: web (GitHub Pages)
+    needs: version
+    if: needs.version.outputs.published == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: v${{ needs.version.outputs.version }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Build (Pages sub-path)
+        env:
+          # Project Pages serve under /<repo>/. Change to "/" for a custom
+          # domain or user/org root site.
+          BASE_PATH: /hakushi/
+        run: npm run build
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+      - id: deploy
+        uses: actions/deploy-pages@v4
+
+  # ---------------------------------------------------------------------------
+  # 3. Desktop -> signed installers attached to the GitHub Release.
+  # ---------------------------------------------------------------------------
+  desktop:
+    name: desktop (${{ matrix.platform }})
+    needs: version
+    if: needs.version.outputs.published == 'true'
+    permissions:
+      contents: write # upload installers to the Release
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            args: "--target universal-apple-darwin"
+            rust-targets: "aarch64-apple-darwin,x86_64-apple-darwin"
+          - platform: windows-latest
+            args: ""
+            rust-targets: ""
+          # Linux is a low-cost extra; delete this entry to build Mac/Windows only.
+          - platform: ubuntu-22.04
+            args: ""
+            rust-targets: ""
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: v${{ needs.version.outputs.version }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust-targets }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - name: Install Tauri Linux dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            build-essential \
+            libssl-dev \
+            libgtk-3-dev
+      - run: npm ci
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # macOS signing + notarization (empty -> unsigned build, still runs).
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          # Tauri auto-updater signature (optional).
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          # Attach assets to the Release semantic-release already created.
+          tagName: v${{ needs.version.outputs.version }}
+          releaseName: "Hakushi v${{ needs.version.outputs.version }}"
+          releaseDraft: false
+          prerelease: false
+          args: ${{ matrix.args }}
+
+  # ---------------------------------------------------------------------------
+  # 4. iOS -> TestFlight (App Store Connect). Production submission is manual.
+  # ---------------------------------------------------------------------------
+  ios:
+    name: ios (TestFlight)
+    needs: version
+    if: needs.version.outputs.published == 'true'
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: v${{ needs.version.outputs.version }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-ios
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          key: ios
+      - run: npm ci
+      - name: Import signing certificate
+        uses: apple-actions/import-codesign-certs@v3
+        with:
+          p12-file-base64: ${{ secrets.IOS_CERTIFICATE }}
+          p12-password: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+      - name: Install provisioning profile
+        env:
+          PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE }}
+        run: |
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          echo "$PROFILE_BASE64" | base64 --decode \
+            > ~/Library/MobileDevice/Provisioning\ Profiles/hakushi.mobileprovision
+      - name: Stamp build number
+        env:
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: node scripts/sync-version.mjs ${{ needs.version.outputs.version }}
+      - name: Build IPA (App Store)
+        env:
+          APPLE_DEVELOPMENT_TEAM: ${{ secrets.APPLE_TEAM_ID }}
+        run: npm run tauri -- ios build --export-method app-store-connect
+      - name: Upload to TestFlight
+        uses: apple-actions/upload-testflight-build@v3
+        with:
+          app-path: src-tauri/gen/apple/build/arm64/Hakushi.ipa
+          issuer-id: ${{ secrets.APPLE_API_ISSUER_ID }}
+          api-key-id: ${{ secrets.APPLE_API_KEY_ID }}
+          api-private-key: ${{ secrets.APPLE_API_PRIVATE_KEY }}
+
+  # ---------------------------------------------------------------------------
+  # 5. Android -> Google Play internal-testing track. Production is manual.
+  # ---------------------------------------------------------------------------
+  android:
+    name: android (Play internal)
+    needs: version
+    if: needs.version.outputs.published == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: v${{ needs.version.outputs.version }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          key: android
+      - name: Configure Android NDK toolchain env
+        run: |
+          NDK_BIN="$ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin"
+          echo "$NDK_BIN" >> "$GITHUB_PATH"
+          echo "CC_aarch64_linux_android=$NDK_BIN/aarch64-linux-android24-clang" >> "$GITHUB_ENV"
+          echo "CXX_aarch64_linux_android=$NDK_BIN/aarch64-linux-android24-clang++" >> "$GITHUB_ENV"
+          echo "AR_aarch64_linux_android=$NDK_BIN/llvm-ar" >> "$GITHUB_ENV"
+          echo "RANLIB_aarch64_linux_android=$NDK_BIN/llvm-ranlib" >> "$GITHUB_ENV"
+          echo "CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=$NDK_BIN/aarch64-linux-android24-clang" >> "$GITHUB_ENV"
+      - run: npm ci
+      - name: Write signing keystore + properties
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          cd src-tauri/gen/android/app
+          echo "$KEYSTORE_BASE64" | base64 --decode > upload.jks
+          {
+            echo "storeFile=upload.jks"
+            echo "storePassword=$KEYSTORE_PASSWORD"
+            echo "keyAlias=$KEY_ALIAS"
+            echo "keyPassword=$KEY_PASSWORD"
+          } > keystore.properties
+      - name: Stamp build number
+        env:
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: node scripts/sync-version.mjs ${{ needs.version.outputs.version }}
+      - name: Build AAB
+        run: npm run tauri -- android build --aab
+      - name: Locate AAB
+        id: aab
+        run: |
+          AAB=$(find src-tauri/gen/android -name "*.aab" | head -n1)
+          echo "path=$AAB" >> "$GITHUB_OUTPUT"
+      - name: Upload to Google Play (internal)
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: dev.hakushi.app
+          releaseFiles: ${{ steps.aab.outputs.path }}
+          track: internal
+          status: completed

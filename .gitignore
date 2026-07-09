@@ -1,0 +1,26 @@
+# Node
+node_modules/
+dist/
+
+# Rust / Tauri
+src-tauri/target/
+src-tauri/gen/apple/build/
+src-tauri/gen/android/.gradle/
+src-tauri/gen/android/app/build/
+
+# Hakushi workspace-local cache (rebuildable index — never committed)
+.hakushi/
+
+# OS
+.DS_Store
+
+# Screen recordings dropped into the repo for reference (never committed)
+*.mov
+
+# Logs
+*.log
+
+# AI Agents
+.claude
+.codex
+.copilot

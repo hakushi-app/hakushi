@@ -1,0 +1,28 @@
+Hakushi
+Copyright (c) 2026 Hakushi contributors
+
+This product is licensed under the MIT License; see the LICENSE file.
+
+Hakushi bundles third-party open-source components whose own licenses continue
+to apply. A full, generated inventory is in THIRD_PARTY_LICENSES.md. The items
+below carry attribution or redistribution obligations that the crate/package
+metadata alone does not surface:
+
+- libgit2 (desktop builds only) — GPL-2.0 WITH a linking exception.
+  Vendored via libgit2-sys. The linking exception permits distributing libgit2
+  linked into a differently-licensed work (here, MIT), provided this notice is
+  preserved. Copyright (c) the libgit2 contributors.
+  https://github.com/libgit2/libgit2/blob/main/COPYING
+
+- OpenSSL (desktop builds only) — Apache License 2.0 (OpenSSL 3.x).
+  Vendored via openssl-src for HTTPS transport. Copyright (c) the OpenSSL
+  Project Authors. https://www.openssl.org
+
+- SQLite — Public Domain. Compiled from source (bundled) for the link index.
+  https://www.sqlite.org/copyright.html
+
+- MPL-2.0 components — Servo CSS-parsing crates (Rust) and the mdast2docx Docx
+  toolchain (npm). Used unmodified; source is published on crates.io / npm.
+
+Mobile builds (iOS / Android) use the pure-Rust `gix` and `rustls` stacks and
+include neither libgit2 nor OpenSSL.

@@ -1,0 +1,36 @@
+name: Feature request
+description: Suggest an idea or improvement
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you trying to solve?
+      description: Describe the need, not just the solution.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: dropdown
+    id: backlog
+    attributes:
+      label: Is this already on the v2 backlog?
+      description: See the README "v2 バックログ" section.
+      options:
+        - "No / not sure"
+        - "Yes — this refines a backlog item"
+  - type: checkboxes
+    id: design
+    attributes:
+      label: Design alignment
+      description: Hakushi is local-first, git-native, and Markdown-native.
+      options:
+        - label: This fits the on-disk-Markdown / mdast-source-of-truth design (see docs/DESIGN.md)

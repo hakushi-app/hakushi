@@ -1,0 +1,427 @@
+/* Track T1 — template rich-view styling (kanban / calendar / todo).
+   Scoped to .tpl-* classes; does not touch styles.css / editor.css. */
+
+.tpl-view {
+  height: 100%;
+  overflow: auto;
+  padding: 16px;
+  box-sizing: border-box;
+  font-size: 14px;
+  color: var(--fg, #37352f);
+}
+
+.tpl-error {
+  color: #b3261e;
+  font-size: 13px;
+  padding: 8px 12px;
+}
+
+/* Save-as-template popover (rendered inside .export-menu in EditorPane). */
+.tpl-save-popover {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  min-width: 220px;
+}
+
+.tpl-save-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--fg-muted, #787774);
+}
+
+.tpl-save-label input {
+  border: 1px solid var(--border, #e9e9e7);
+  border-radius: 6px;
+  padding: 4px 6px;
+  font-size: 13px;
+}
+
+.tpl-save-popover .tpl-error {
+  padding: 0;
+  font-size: 12px;
+}
+
+.tpl-saved-note {
+  font-size: 12px;
+  color: var(--fg-muted, #787774);
+  padding: 4px 16px;
+  border-bottom: 1px solid var(--border, #e9e9e7);
+  background: var(--bg-sidebar, #f7f6f3);
+}
+
+/* Template picker in the new-page modal (§9.3) — mirrors .modal-label input
+   from styles.css (which this file must not touch). */
+.modal-label select {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 6px 8px;
+  font-size: 13px;
+  color: var(--fg, #37352f);
+  border: 1px solid var(--border, #e9e9e7);
+  border-radius: 4px;
+  background: var(--bg, #fff);
+}
+
+/* ---------------------------------------------------------------------- */
+/* Kanban                                                                 */
+/* ---------------------------------------------------------------------- */
+
+.kanban-board {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  min-height: 100%;
+}
+
+.kanban-column {
+  flex: 0 0 240px;
+  background: var(--bg-sidebar, #f7f6f3);
+  border: 1px solid var(--border, #e9e9e7);
+  border-radius: 8px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.kanban-column.drag-over {
+  outline: 2px solid var(--accent, #2e75cc);
+  outline-offset: -2px;
+}
+
+.kanban-column-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg-muted, #787774);
+  padding: 2px 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.kanban-count {
+  font-weight: 400;
+}
+
+.kanban-card {
+  background: var(--bg, #fff);
+  border: 1px solid var(--border, #e9e9e7);
+  border-radius: 6px;
+  padding: 6px 8px;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  cursor: grab;
+}
+
+.kanban-card.checked .kanban-card-text {
+  text-decoration: line-through;
+  color: var(--fg-muted, #787774);
+}
+
+/* M8 (§12.4) pointer touch drag: source card dims, floating ghost follows. */
+.kanban-card.pointer-dragging {
+  opacity: 0.4;
+}
+
+.kanban-card {
+  /* Let the long-press pointer drag win over the browser's touch scroll on
+     the card itself; the surrounding board still scrolls normally. */
+  touch-action: pan-y;
+}
+
+.kanban-drag-ghost {
+  position: fixed;
+  z-index: 60;
+  pointer-events: none;
+  max-width: 220px;
+  padding: 6px 10px;
+  background: var(--bg, #fff);
+  border: 1px solid var(--accent, #2e75cc);
+  border-radius: 6px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  font-size: 13px;
+  color: var(--fg, #37352f);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kanban-card input[type="checkbox"] {
+  margin-top: 2px;
+  flex: 0 0 auto;
+}
+
+.kanban-card-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.kanban-card-actions {
+  display: flex;
+  gap: 2px;
+  flex: 0 0 auto;
+}
+
+.kanban-card-actions button {
+  border: none;
+  background: transparent;
+  color: var(--fg-muted, #787774);
+  cursor: pointer;
+  padding: 0 2px;
+  font-size: 12px;
+  line-height: 18px;
+  border-radius: 4px;
+}
+
+.kanban-card-actions button:hover:not(:disabled) {
+  background: var(--bg-sidebar, #f7f6f3);
+  color: var(--fg, #37352f);
+}
+
+.kanban-card-actions button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.kanban-add-form {
+  display: flex;
+  gap: 4px;
+}
+
+.kanban-add-form input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 1px solid var(--border, #e9e9e7);
+  border-radius: 6px;
+  padding: 4px 6px;
+  font-size: 12px;
+}
+
+.kanban-add-form button {
+  border: 1px solid var(--border, #e9e9e7);
+  border-radius: 6px;
+  background: var(--bg, #fff);
+  font-size: 12px;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Calendar                                                               */
+/* ---------------------------------------------------------------------- */
+
+.calendar-view {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.calendar-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.calendar-header h3 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.calendar-header button {
+  border: 1px solid var(--border, #e9e9e7);
+  border-radius: 6px;
+  background: var(--bg, #fff);
+  padding: 2px 10px;
+  cursor: pointer;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  border-left: 1px solid var(--border, #e9e9e7);
+  border-top: 1px solid var(--border, #e9e9e7);
+}
+
+.calendar-dow {
+  font-size: 11px;
+  color: var(--fg-muted, #787774);
+  text-align: center;
+  padding: 4px 0;
+  border-right: 1px solid var(--border, #e9e9e7);
+  border-bottom: 1px solid var(--border, #e9e9e7);
+  background: var(--bg-sidebar, #f7f6f3);
+}
+
+.calendar-cell {
+  min-height: 76px;
+  border-right: 1px solid var(--border, #e9e9e7);
+  border-bottom: 1px solid var(--border, #e9e9e7);
+  padding: 2px 4px;
+  font-size: 11px;
+  vertical-align: top;
+}
+
+.calendar-cell.other-month {
+  background: var(--bg-sidebar, #f7f6f3);
+  color: var(--fg-muted, #787774);
+}
+
+.calendar-cell.today .calendar-daynum {
+  background: var(--accent, #2e75cc);
+  color: #fff;
+  border-radius: 50%;
+}
+
+.calendar-daynum {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  line-height: 18px;
+  text-align: center;
+  margin-bottom: 2px;
+}
+
+.calendar-event {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  border-radius: 4px;
+  background: #e8f0fb;
+  color: #1c3e66;
+  font-size: 11px;
+  padding: 1px 4px;
+  margin-bottom: 2px;
+  cursor: default;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calendar-event.has-page {
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.calendar-event .calendar-tag {
+  color: var(--fg-muted, #787774);
+  margin-left: 4px;
+}
+
+.calendar-add-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  border-top: 1px solid var(--border, #e9e9e7);
+  padding-top: 8px;
+}
+
+.calendar-add-form input {
+  border: 1px solid var(--border, #e9e9e7);
+  border-radius: 6px;
+  padding: 4px 6px;
+  font-size: 12px;
+}
+
+.calendar-add-form button {
+  border: 1px solid var(--border, #e9e9e7);
+  border-radius: 6px;
+  background: var(--bg, #fff);
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Todo                                                                   */
+/* ---------------------------------------------------------------------- */
+
+.todo-view {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 640px;
+}
+
+.todo-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--fg-muted, #787774);
+}
+
+.todo-controls select {
+  border: 1px solid var(--border, #e9e9e7);
+  border-radius: 6px;
+  padding: 2px 6px;
+  font-size: 12px;
+}
+
+.todo-group-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg-muted, #787774);
+  margin: 8px 0 2px;
+}
+
+.todo-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 4px 2px;
+  border-bottom: 1px solid var(--border, #e9e9e7);
+}
+
+.todo-item input[type="checkbox"] {
+  margin-top: 3px;
+}
+
+.todo-item.checked .todo-text {
+  text-decoration: line-through;
+  color: var(--fg-muted, #787774);
+}
+
+.todo-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.todo-badge {
+  font-size: 11px;
+  border-radius: 4px;
+  padding: 0 6px;
+  line-height: 18px;
+  flex: 0 0 auto;
+  background: var(--bg-sidebar, #f7f6f3);
+  color: var(--fg-muted, #787774);
+}
+
+.todo-badge.due {
+  background: #fdf0e0;
+  color: #8a5a00;
+}
+
+.todo-badge.prio-high {
+  background: #fbe4e4;
+  color: #a12f2f;
+}
+
+.todo-badge.prio-medium {
+  background: #fdf0e0;
+  color: #8a5a00;
+}
+
+.todo-badge.prio-low {
+  background: #e6f2e6;
+  color: #2f6b2f;
+}

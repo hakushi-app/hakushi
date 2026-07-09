@@ -1,0 +1,309 @@
+/* Track T3 — M6 collab UI (right-panel tabs Git | Issues | PRs).
+   Extends the .git-panel look from src/styles.css; only collab-specific
+   classes live here. */
+
+/* --- Tab bar (rendered by GitPanel under its header) --- */
+
+.collab-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 6px 8px 0;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 41px; /* below the sticky .git-panel-header */
+  background: var(--bg);
+  z-index: 1;
+}
+
+.collab-tab {
+  padding: 5px 10px;
+  font-size: 12px;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+
+.collab-tab:hover {
+  background: rgba(55, 53, 47, 0.06);
+  color: var(--fg);
+}
+
+.collab-tab.active {
+  border-color: var(--border);
+  background: var(--bg);
+  color: var(--fg);
+  font-weight: 600;
+  margin-bottom: -1px;
+}
+
+/* --- Filter chips (open / closed) --- */
+
+.collab-chips {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.collab-chip {
+  padding: 2px 10px;
+  font-size: 11px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+
+.collab-chip.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* --- List items --- */
+
+.collab-list {
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+}
+
+.collab-item {
+  display: block;
+  width: 100%;
+  padding: 6px 8px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: var(--fg);
+}
+
+.collab-item:hover {
+  background: rgba(55, 53, 47, 0.06);
+}
+
+.collab-item-title {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.collab-item-meta {
+  display: block;
+  font-size: 11px;
+  color: var(--fg-muted);
+  margin-top: 2px;
+}
+
+/* --- State badges --- */
+
+.collab-badge {
+  display: inline-block;
+  padding: 1px 8px;
+  font-size: 11px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  color: var(--fg-muted);
+  background: var(--bg-sidebar);
+}
+
+.collab-badge-open {
+  border-color: #2e9e57;
+  color: #1f7a41;
+  background: rgba(46, 158, 87, 0.1);
+}
+
+.collab-badge-closed {
+  border-color: #c0392b;
+  color: #a03024;
+  background: rgba(192, 57, 43, 0.08);
+}
+
+.collab-badge-merged {
+  border-color: #7d5bb0;
+  color: #64489a;
+  background: rgba(125, 91, 176, 0.1);
+}
+
+/* --- Forms --- */
+
+.collab-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.collab-form input[type="text"],
+.collab-form input[type="number"],
+.collab-form select,
+.collab-form textarea {
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 12px;
+  font-family: inherit;
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+}
+
+.collab-form textarea {
+  resize: vertical;
+}
+
+.collab-form input:focus,
+.collab-form select:focus,
+.collab-form textarea:focus {
+  outline: 2px solid rgba(46, 117, 204, 0.4);
+  outline-offset: -1px;
+}
+
+.collab-form-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.collab-form-row label {
+  font-size: 11px;
+  color: var(--fg-muted);
+  white-space: nowrap;
+}
+
+.collab-form-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.collab-primary-btn {
+  padding: 4px 10px;
+  font-size: 12px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+}
+
+.collab-primary-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.collab-secondary-btn {
+  padding: 4px 10px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+
+.collab-secondary-btn:hover {
+  color: var(--fg);
+  background: rgba(55, 53, 47, 0.06);
+}
+
+.collab-hint {
+  font-size: 11px;
+  color: var(--fg-muted);
+}
+
+/* --- Detail view --- */
+
+.collab-back-btn {
+  padding: 2px 8px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+
+.collab-back-btn:hover {
+  color: var(--fg);
+  background: rgba(55, 53, 47, 0.06);
+}
+
+.collab-detail-title {
+  margin: 0 0 4px;
+  font-size: 13px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.collab-detail-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  color: var(--fg-muted);
+  margin-bottom: 8px;
+}
+
+/* --- Event timeline --- */
+
+.collab-timeline {
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+  border-left: 2px solid var(--border);
+}
+
+.collab-event {
+  padding: 4px 0 4px 10px;
+}
+
+.collab-event-head {
+  font-size: 11px;
+  color: var(--fg-muted);
+}
+
+.collab-event-body {
+  margin: 2px 0 0;
+  font-size: 12px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: inherit;
+}
+
+.collab-event-anchor {
+  display: inline-block;
+  margin-right: 4px;
+  padding: 0 5px;
+  font-size: 11px;
+  border-radius: 4px;
+  background: var(--bg-sidebar);
+  border: 1px solid var(--border);
+  color: var(--fg-muted);
+  overflow-wrap: anywhere;
+}
+
+/* --- Merge area --- */
+
+.collab-merge-conflicts {
+  margin: 6px 0;
+  padding: 6px 8px;
+  font-size: 12px;
+  border: 1px solid #c0392b;
+  border-radius: 4px;
+  background: rgba(192, 57, 43, 0.06);
+  color: #a03024;
+}
+
+.collab-merge-conflicts ul {
+  margin: 4px 0 4px 16px;
+  padding: 0;
+}

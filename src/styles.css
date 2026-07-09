@@ -1,0 +1,986 @@
+:root {
+  --bg: #ffffff;
+  --bg-sidebar: #f7f6f3;
+  --fg: #37352f;
+  --fg-muted: #787774;
+  --border: #e9e9e7;
+  --accent: #2e75cc;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Sans",
+    "Noto Sans JP", sans-serif;
+  color: var(--fg);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+}
+
+.app-layout {
+  display: flex;
+  height: 100%;
+}
+
+.sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px 12px;
+}
+
+.app-title {
+  font-weight: 600;
+}
+
+/* Sidebar overflow menu (別のフォルダを開く… / インデックス再構築) */
+.sidebar-menu-wrap {
+  position: relative;
+}
+
+.icon-btn {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--fg-muted);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.icon-btn:hover {
+  background: rgba(55, 53, 47, 0.08);
+  color: var(--fg);
+}
+
+.menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 29;
+}
+
+.menu-popup {
+  position: absolute;
+  top: 26px;
+  right: 0;
+  z-index: 30;
+  min-width: 190px;
+  padding: 4px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.menu-popup button {
+  display: block;
+  width: 100%;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--fg);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.menu-popup button:hover {
+  background: rgba(55, 53, 47, 0.08);
+}
+
+.menu-popup button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* Prominent new-page button */
+.new-page-btn {
+  display: block;
+  width: 100%;
+  margin: 0 0 10px;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.new-page-btn:hover {
+  background: rgba(46, 117, 204, 0.08);
+}
+
+.new-page-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.index-status {
+  padding: 0 8px 8px;
+  font-size: 11px;
+  color: var(--fg-muted);
+}
+
+.index-status.error {
+  color: #c4554d;
+}
+
+.op-error {
+  padding: 4px 8px;
+  font-size: 12px;
+  color: #c4554d;
+  word-break: break-word;
+}
+
+.sidebar-empty {
+  color: var(--fg-muted);
+  font-size: 13px;
+  padding: 0 8px;
+}
+
+.editor-area {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+
+.editor-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--fg-muted);
+}
+
+/* Minimal modal (new page / rename / move / delete confirm) */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 15vh;
+  background: rgba(15, 15, 15, 0.35);
+}
+
+.modal {
+  width: 380px;
+  max-width: 90vw;
+  padding: 16px;
+  background: var(--bg);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.modal h2 {
+  margin: 0 0 12px;
+  font-size: 14px;
+}
+
+.modal-label {
+  display: block;
+  margin-bottom: 12px;
+  font-size: 12px;
+  color: var(--fg-muted);
+}
+
+.modal-label input,
+.modal input[type="text"] {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 6px 8px;
+  font-size: 13px;
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+}
+
+.modal-label input:focus {
+  outline: 2px solid rgba(46, 117, 204, 0.4);
+  outline-offset: -1px;
+}
+
+.modal-message {
+  margin: 0 0 12px;
+  font-size: 13px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.modal-actions button {
+  padding: 5px 12px;
+  font-size: 13px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--fg);
+  cursor: pointer;
+}
+
+.modal-actions button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.modal-actions .primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.modal-actions .danger {
+  background: #c4554d;
+  border-color: #c4554d;
+  color: #fff;
+}
+
+/* ---------------------------------------------------------------------------
+ * M4 Git panel (INTERFACES.md §7.3)
+ * ------------------------------------------------------------------------- */
+
+.git-toggle-btn {
+  margin-left: auto;
+  margin-right: 4px;
+  padding: 2px 8px;
+  font-size: 12px;
+  line-height: 1.4;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+
+.git-toggle-btn:hover {
+  background: rgba(55, 53, 47, 0.08);
+  color: var(--fg);
+}
+
+.git-toggle-btn.active {
+  background: rgba(46, 117, 204, 0.1);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.git-panel {
+  width: 320px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--border);
+  background: var(--bg);
+  overflow-y: auto;
+}
+
+.git-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  z-index: 1;
+}
+
+.git-panel-title {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.git-backend-badge {
+  padding: 1px 6px;
+  font-size: 11px;
+  border-radius: 10px;
+  background: var(--bg-sidebar);
+  border: 1px solid var(--border);
+  color: var(--fg-muted);
+}
+
+.git-refresh-btn {
+  margin-left: auto;
+  padding: 2px 8px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+
+.git-refresh-btn:hover {
+  background: rgba(55, 53, 47, 0.08);
+  color: var(--fg);
+}
+
+.git-section {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.git-section h3 {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg-muted);
+  overflow-wrap: anywhere;
+}
+
+.git-empty {
+  margin: 4px 0;
+  font-size: 12px;
+  color: var(--fg-muted);
+}
+
+.git-error {
+  margin: 4px 0 8px;
+  padding: 6px 8px;
+  font-size: 12px;
+  color: #c4554d;
+  background: rgba(196, 85, 77, 0.08);
+  border: 1px solid rgba(196, 85, 77, 0.3);
+  border-radius: 4px;
+  overflow-wrap: anywhere;
+}
+
+/* ① 変更 */
+
+.git-status-list {
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+}
+
+.git-status-list li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0;
+  font-size: 12px;
+}
+
+.git-status-tag {
+  flex-shrink: 0;
+  padding: 0 5px;
+  font-size: 11px;
+  border-radius: 3px;
+  border: 1px solid var(--border);
+  color: var(--fg-muted);
+}
+
+.git-status-new {
+  color: #2f7d4f;
+  border-color: rgba(47, 125, 79, 0.4);
+}
+
+.git-status-modified {
+  color: #b27a00;
+  border-color: rgba(178, 122, 0, 0.4);
+}
+
+.git-status-deleted,
+.git-status-conflicted {
+  color: #c4554d;
+  border-color: rgba(196, 85, 77, 0.4);
+}
+
+.git-status-path {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.git-commit-message {
+  display: block;
+  width: 100%;
+  margin-bottom: 6px;
+  padding: 6px 8px;
+  font-size: 12px;
+  font-family: inherit;
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  resize: vertical;
+}
+
+.git-commit-message:focus {
+  outline: 2px solid rgba(46, 117, 204, 0.4);
+  outline-offset: -1px;
+}
+
+.git-commit-btn,
+.git-revert-btn,
+.git-branch-create button {
+  padding: 4px 10px;
+  font-size: 12px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+}
+
+.git-commit-btn:disabled,
+.git-revert-btn:disabled,
+.git-branch-create button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* ② 履歴 */
+
+.git-history-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.git-history-item {
+  display: block;
+  width: 100%;
+  padding: 5px 6px;
+  text-align: left;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--fg);
+  cursor: pointer;
+}
+
+.git-history-item:hover {
+  background: rgba(55, 53, 47, 0.06);
+}
+
+.git-history-item.selected {
+  background: rgba(46, 117, 204, 0.08);
+}
+
+.git-history-summary {
+  display: block;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.git-history-meta {
+  display: block;
+  font-size: 11px;
+  color: var(--fg-muted);
+}
+
+.git-diff {
+  margin: 4px 0 8px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg-sidebar);
+}
+
+.git-diff-list {
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+}
+
+.git-diff-op {
+  padding: 4px 0;
+  font-size: 12px;
+}
+
+.git-diff-head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.git-diff-icon {
+  flex-shrink: 0;
+}
+
+.git-diff-snippet {
+  margin: 4px 0 0;
+  padding: 4px 6px;
+  font-size: 11px;
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  border-radius: 3px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+}
+
+.git-diff-added {
+  border-left: 3px solid #2f7d4f;
+}
+
+.git-diff-removed {
+  border-left: 3px solid #c4554d;
+  opacity: 0.75;
+}
+
+/* ③ ブランチ */
+
+.git-branch-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+}
+
+.git-branch-select {
+  display: block;
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 4px 6px;
+  font-size: 12px;
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+}
+
+.git-branch-create {
+  display: flex;
+  gap: 6px;
+}
+
+.git-branch-create input {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 6px;
+  font-size: 12px;
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+}
+
+.git-branch-create input:focus {
+  outline: 2px solid rgba(46, 117, 204, 0.4);
+  outline-offset: -1px;
+}
+
+/* ---------------------------------------------------------------------------
+ * M7 Sync — settings modal + sidebar status line (INTERFACES.md §11.5)
+ * ------------------------------------------------------------------------- */
+
+/* Settings modal (reuses .modal / .modal-backdrop / .modal-actions). */
+.sync-modal {
+  width: 440px;
+}
+
+.sync-loading {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--fg-muted);
+}
+
+.sync-form {
+  margin: 0;
+}
+
+.sync-form .modal-label {
+  margin-bottom: 6px;
+}
+
+.sync-form input[type="password"] {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 6px 8px;
+  font-size: 13px;
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+}
+
+.sync-form input[type="password"]:focus {
+  outline: 2px solid rgba(46, 117, 204, 0.4);
+  outline-offset: -1px;
+}
+
+.sync-hint {
+  margin: 0 0 10px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--fg-muted);
+}
+
+.sync-divider {
+  margin: 14px 0;
+  border: none;
+  border-top: 1px solid var(--border);
+}
+
+.sync-row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.sync-row-actions .primary {
+  padding: 5px 12px;
+  font-size: 13px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+}
+
+.sync-row-actions .primary:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.sync-saved-badge {
+  margin-right: auto;
+  font-size: 12px;
+  color: #2f8a4c;
+}
+
+.sync-clear-btn {
+  padding: 5px 10px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: #c4554d;
+  cursor: pointer;
+}
+
+.sync-clear-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Sidebar bottom status line. */
+.sync-status {
+  margin-top: auto;
+  padding: 8px 12px 10px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+}
+
+.sync-status-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sync-now-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--fg);
+  cursor: pointer;
+}
+
+.sync-now-btn:hover:not(:disabled) {
+  background: var(--bg-sidebar);
+}
+
+.sync-now-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.sync-spinner {
+  width: 11px;
+  height: 11px;
+  border: 2px solid rgba(46, 117, 204, 0.25);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: sync-spin 0.7s linear infinite;
+}
+
+@keyframes sync-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.sync-last-time {
+  color: var(--fg-muted);
+}
+
+.sync-status-msg {
+  margin-top: 6px;
+  line-height: 1.5;
+}
+
+.sync-status-ok {
+  color: var(--fg-muted);
+}
+
+.sync-status-warn {
+  color: #b0730a;
+}
+
+.sync-status-error {
+  color: #c4554d;
+}
+
+/* M8 auto-sync (§2.5): conflict badge in the sidebar status area (state only —
+ * never an auto-opened modal). */
+.sync-conflict-badge {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 4px 8px;
+  border: 1px solid #e6c3bf;
+  border-radius: 6px;
+  background: #fbeceb;
+  color: #a23c33;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sync-conflict-badge:hover {
+  background: #f7ddda;
+}
+
+/* M8 auto-sync settings section (slotted into the 同期設定 modal). */
+.autosync-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.autosync-heading {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.autosync-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.autosync-row select {
+  margin-left: auto;
+}
+
+/* ---------------------------------------------------------------------------
+ * M8 Responsive / touch (INTERFACES.md §12.4) — mobile ≤768px only.
+ *
+ * Everything below is DESKTOP-INERT: the mobile-only chrome (.mobile-topbar,
+ * .drawer-*) is display:none until the media query, and the media query never
+ * fires above 768px. Desktop layout is byte-for-byte unchanged.
+ * ------------------------------------------------------------------------- */
+
+/* Mobile top bar + drawer shell are hidden on desktop. */
+.mobile-topbar {
+  display: none;
+}
+
+.drawer-backdrop {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  /* --- Top bar: hamburger + title, fixed at the top of the viewport ------ */
+  .mobile-topbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 48px;
+    padding: 0 8px;
+    z-index: 40;
+    background: var(--bg-sidebar);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .hamburger-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    /* ≥44px tap target (§12.4). */
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--fg);
+    cursor: pointer;
+  }
+
+  .hamburger-btn:active {
+    background: rgba(55, 53, 47, 0.08);
+  }
+
+  .hamburger-icon {
+    font-size: 20px;
+    line-height: 1;
+  }
+
+  .mobile-topbar-title {
+    font-weight: 600;
+    font-size: 15px;
+  }
+
+  /* The editor area sits below the fixed top bar. */
+  .app-layout {
+    flex-direction: column;
+    padding-top: 48px;
+  }
+
+  .editor-area {
+    width: 100%;
+  }
+
+  /* --- Sidebar → off-canvas drawer --------------------------------------- */
+  .drawer-shell {
+    position: fixed;
+    top: 48px;
+    bottom: 0;
+    left: 0;
+    width: 84vw;
+    max-width: 320px;
+    z-index: 45;
+    transform: translateX(-100%);
+    transition: transform 0.22s ease;
+    will-change: transform;
+  }
+
+  .drawer-shell.open {
+    transform: translateX(0);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.25);
+  }
+
+  .drawer-backdrop {
+    display: block;
+    position: fixed;
+    top: 48px;
+    inset: 48px 0 0 0;
+    z-index: 44;
+    background: rgba(15, 15, 15, 0.4);
+  }
+
+  /* The sidebar fills the drawer shell (drawer owns positioning). */
+  .drawer-shell .sidebar {
+    width: 100%;
+    height: 100%;
+    border-right: 1px solid var(--border);
+  }
+
+  /* --- Git panel → full-screen sheet ------------------------------------- */
+  .git-panel-sheet {
+    position: fixed;
+    inset: 48px 0 0 0;
+    z-index: 46;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+  }
+
+  .git-sheet-close {
+    flex-shrink: 0;
+    min-height: 44px;
+    padding: 0 14px;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-sidebar);
+    color: var(--fg);
+    font-size: 14px;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .git-panel-sheet .git-panel {
+    width: 100%;
+    flex: 1;
+    border-left: none;
+  }
+
+  /* --- Wider modals + larger tap targets --------------------------------- */
+  .modal {
+    width: 90vw;
+  }
+
+  .modal-backdrop {
+    padding-top: 8vh;
+  }
+
+  .modal-actions button {
+    min-height: 44px;
+  }
+
+  /* Tree rows, menu items, and git-ui tabs get comfortable touch targets. */
+  .tree-row {
+    min-height: 40px;
+  }
+
+  .menu-popup button {
+    min-height: 44px;
+  }
+
+  .collab-tab {
+    min-height: 44px;
+  }
+
+  .collab-tabs {
+    /* Keep the Git | Issues | PRs tabs usable side-by-side (§12.4). */
+    display: flex;
+  }
+
+  .new-page-btn,
+  .sync-now-btn {
+    min-height: 40px;
+  }
+}
+
+/* Desktop-only wrapper for the docked git panel (no positioning changes). */
+.git-panel-dock {
+  display: contents;
+}

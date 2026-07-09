@@ -1,0 +1,127 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # ---------------------------------------------------------------
+  # Frontend: typecheck + roundtrip/fidelity test harness (vitest)
+  # ---------------------------------------------------------------
+  web:
+    name: web (typecheck + vitest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+
+  # ---------------------------------------------------------------
+  # Desktop: cargo check with default features (git-libgit2)
+  # cargo check does not need the frontend dist; we only create an
+  # empty dist/ so tauri-build's frontendDist existence check passes.
+  # ---------------------------------------------------------------
+  desktop-check:
+    name: desktop cargo check (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Tauri v2 Linux dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          # libayatana-appindicator3-dev replaces libappindicator3-dev,
+          # which was dropped from the Ubuntu 24.04 (ubuntu-latest) archive.
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            build-essential \
+            libssl-dev \
+            libgtk-3-dev
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - name: Create placeholder frontendDist
+        shell: bash
+        run: mkdir -p dist
+      - name: cargo check (default = git-libgit2)
+        working-directory: src-tauri
+        run: cargo check
+
+  # ---------------------------------------------------------------
+  # iOS: cargo check for aarch64-apple-ios with the pure-Rust gix
+  # backend (M0 gate: mobile git must compile).
+  # ---------------------------------------------------------------
+  ios-check:
+    name: ios cargo check (aarch64-apple-ios, git-gix)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-ios
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          key: ios
+      - name: Create placeholder frontendDist
+        run: mkdir -p dist
+      - name: cargo check (git-gix)
+        working-directory: src-tauri
+        run: cargo check --target aarch64-apple-ios --no-default-features --features git-gix
+
+  # ---------------------------------------------------------------
+  # Android: cargo check for aarch64-linux-android with git-gix.
+  # GitHub ubuntu runners preinstall the NDK; ANDROID_NDK_LATEST_HOME
+  # points at the newest one (r28 line as of 2026). We wire CC/AR and
+  # the cargo linker to the NDK's clang for API level 24.
+  # Since M2 this env is REQUIRED even for `cargo check`: rusqlite's
+  # "bundled" feature cross-compiles the SQLite C amalgamation
+  # (docs/dev/M0-SPIKE-RESULTS.md, M2 addendum).
+  # ---------------------------------------------------------------
+  android-check:
+    name: android cargo check (aarch64-linux-android, git-gix)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          key: android
+      - name: Configure Android NDK toolchain env
+        run: |
+          NDK_BIN="$ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin"
+          echo "$NDK_BIN" >> "$GITHUB_PATH"
+          echo "CC_aarch64_linux_android=$NDK_BIN/aarch64-linux-android24-clang" >> "$GITHUB_ENV"
+          echo "CXX_aarch64_linux_android=$NDK_BIN/aarch64-linux-android24-clang++" >> "$GITHUB_ENV"
+          echo "AR_aarch64_linux_android=$NDK_BIN/llvm-ar" >> "$GITHUB_ENV"
+          echo "RANLIB_aarch64_linux_android=$NDK_BIN/llvm-ranlib" >> "$GITHUB_ENV"
+          echo "CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=$NDK_BIN/aarch64-linux-android24-clang" >> "$GITHUB_ENV"
+      - name: Create placeholder frontendDist
+        run: mkdir -p dist
+      - name: cargo check (git-gix)
+        working-directory: src-tauri
+        run: cargo check --target aarch64-linux-android --no-default-features --features git-gix

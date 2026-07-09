@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions & ideas (Discussions)
+    url: https://github.com/0Myu0001/Hakushi/discussions
+    about: Ask questions or discuss ideas here — not every thread needs to be an issue.
+  - name: Report a security vulnerability
+    url: https://github.com/0Myu0001/Hakushi/security/advisories/new
+    about: Report security issues privately. Never open a public issue for a vulnerability.
