@@ -17,7 +17,7 @@
     "@codemirror/lang-markdown": "^6.5.0",
     "@codemirror/language-data": "^6.5.2",
     "@codemirror/state": "^6.7.0",
-    "@codemirror/view": "^6.43.4",
+    "@codemirror/view": "^6.43.6",
     "@isomorphic-git/lightning-fs": "^4.6.2",
     "@tauri-apps/api": "^2.11.1",
     "@tauri-apps/plugin-dialog": "^2.7.1",
