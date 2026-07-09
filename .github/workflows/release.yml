@@ -199,7 +199,7 @@ jobs:
           key: ios
       - run: npm ci
       - name: Import signing certificate
-        uses: apple-actions/import-codesign-certs@v3
+        uses: apple-actions/import-codesign-certs@v7
         with:
           p12-file-base64: ${{ secrets.IOS_CERTIFICATE }}
           p12-password: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
