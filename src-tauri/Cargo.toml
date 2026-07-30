@@ -47,7 +47,7 @@ keyring = { version = "3", features = [
 #   sha1        — object hashing (required to write any object)
 #   status      — Repository::status (index<->worktree + dirwalk for untracked)
 #   tree-editor — Repository::edit_tree, used to build commit trees
-gix = { version = "0.85.0", optional = true, default-features = false, features = [
+gix = { version = "0.86.0", optional = true, default-features = false, features = [
     "sha1",
     "status",
     "tree-editor",
